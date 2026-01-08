@@ -1,0 +1,18 @@
+# --- C/C++ ---
+*.exe
+*.o
+*.obj
+*.out
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+
+# --- IDE & System ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
