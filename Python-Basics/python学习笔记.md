@@ -97,6 +97,14 @@ tags:
 - **`or`** (或)：**一真则真**。左右只要有一个 True，结果就为 True。
 - **`not`** (非)：**取反**。`True` 变 `False`。
 
+### 5. 成员运算符 (Membership Operators)
+用于检查一个序列（字符串、列表、元组、字典的键）中是否**包含**某个值。在 WMS 中常用于检查 "ID 是否已存在"。
+
+| 运算符 | 描述 | 示例 |
+| :--- | :--- | :--- |
+| **`in`** | 如果在指定的序列中找到值返回 True | `"a" in ["a", "b"]` -> `True` |
+| **`not in`** | 如果在指定的序列中没有找到值返回 True | `1001 not in id_list` -> `True` |
+
 ---
 
 # 4. 流程控制 (Control Flow)
@@ -246,7 +254,20 @@ finally:
 | **删除 (指定)** | `list.remove(x)`          | 移除列表中第一个值为 `x` 的元素。            |
 | **排序**      | `list.sort()`             | 升序排列 (从小到大)。                   |
 | **倒序**      | `list.sort(reverse=True)` | 降序排列 (从大到小)。                   |
+### 进阶排序机制 (Sorting Mastery)
 
+- **`list.sort()` vs `sorted(list)`**
+    - `sort()`: **原地修改**（原列表顺序被打乱），返回 `None`。
+    - `sorted()`: **返回新列表**（原列表保持不变），推荐用于数据展示。
+
+- **`key` 参数**：指定排序的“依据”。
+   ```python
+    products = [("Coke", 3.0), ("iPad", 4000.0)]
+    
+    # 场景：按价格(索引1)从高到低排
+    # key 接收一个函数，这里配合 lambda 使用
+    sorted_list = sorted(products, key=lambda x: x[1], reverse=True)
+    ```
 ## 2. 字典 (Dictionary)
 
 字典是一种存储 **键值对 (Key-Value Pairs)** 的无序容器（Python 3.7+ 保持插入顺序）。
@@ -376,8 +397,19 @@ students = [
     
 
 ** 黄金法则**：尽量在函数内部处理数据，通过 `return` 把结果交出来，而不是去修改函数外部的变量。
+## 5. 匿名函数 (Lambda)
+一种只有一行代码、没有名字的“一次性”函数。常作为参数传给 `sorted`, `max`, `min` 等高阶函数。
 
-
+- **语法**：`lambda 参数: 表达式` (自动 return 表达式的结果)
+- **实战对比**：
+    ```python
+    # 传统写法
+    def get_price(product):
+        return product.price
+    
+    # Lambda 写法 (配合排序)
+    sorted(products, key=lambda p: p.price)
+    ```
 # 7. 文件操作与持久化 (Persistence)
 
 ### 1. 基础读写
@@ -711,7 +743,20 @@ apple = Food("Apple", 2.5, "2025-12-01")
 apple.info # 自动拥有父类的继承方法
 ```
 
+## 6. 动态属性获取 (Reflection)
+如何通过“字符串”来访问对象的属性？WMS 中处理 `list -p` (按 price 排序) 的必备技巧。
+
+- **函数**：`getattr(object, "name")`
+- **效果**：等同于 `object.name`
+- **实战**：
+    ```python
+    key = "price" # 假设这是用户输入的排序字段
+    # 动态获取属性值，而不是写死 p.price
+    value = getattr(product_obj, key) 
+    ```
+
 ---
+
 # 9. 代码审美与工程规范 (Best Practices)
 
 ## 1. f-string 进阶格式化
@@ -808,3 +853,74 @@ from core.handler import save_data
 ```
 `
 	*tips* :`__init__.py` 在 Python 3.3 以前，文件夹里必须有这个文件（即使是空的）才会被视为一个包。现在的项目中通常依然保留它，用于标记目录结构。
+	
+---
+# 项目实战
+## wms系统
+### 开发思路指南 (Architecture Design)
+
+#### 1. 指令解析器 (Command Parser)
+如何处理 `add Coke 3 100` 这样的指令？
+- **核心逻辑**：使用字符串切片。
+    ```python
+    cmd = input("WMS> ").strip()
+    parts = cmd.split()  # ['add', 'Coke', '3', '100']
+    action = parts[0]    # 'add'
+    args = parts[1:]     # 参数列表
+    ```
+
+#### 2. 数据结构选型
+- **方案 A (简单)**：`products = [Product(), Product()]`
+    - 缺点：查找 ID 需要遍历列表，速度慢。
+- **方案 B (高效)**：`products = {1001: Product(), 1002: Product()}`
+    - 优点：使用字典存储，`products[1001]` 可直接获取对象，**查找效率极高**。建议 WMS 采用此方案。
+## 3. 实际编写过程中的报错与问题
+
+
+###  1. 基础语法不牢固
+
+#### (1) `input()` 
+- **现象**：输入的明明是数字 `100`，做加法时却报错，或者存进 JSON 变成了字符串 `"100"`。
+- **原因**：`input()` 拿到的永远是 **文本 (String)**。
+- **✅ 解决**：拿到手必须立刻转！
+    ```python
+    # 必须包一层 float() 或 int()
+    price = float(input("价格: "))
+    ```
+#### (2) 大小写写错了（傻不拉几的
+- **现象**：存文件时 Key 是 `"ID"`，读文件时代码写了 `p["id"]`，直接报错 `KeyError`。
+- **原因**：`A` 和 `a` 在加是两个完全不同的字符。
+- **解决**：
+    1. 代码里统一用小写（如 `id`, `name`）。
+    2. **修改代码后，务必删掉旧的 `.json` 存档文件**，让程序重新生成。
+
+###  2. 面向对象 (OOP) 逻辑问题
+
+####  类和对象分不清
+- **现象**：调用 `Repository.save()` 报错，提示缺少 `self`。
+- **原因**：`Repository` 是类（图纸），它没法存东西。`repo` 是实例（盖好的楼），东西都在它里面。
+- **解决**：凡是涉及存取数据的，必须用 **实例** 调用：`repo.save()`。
+---
+
+### 3. 架构逻辑的坑
+
+#### 1.  数据流断裂
+- **现象**：程序启动不报错，文件也读了，但用 `list` 一查，仓库全是空的。
+- **原因**：只是把文件读到了内存里，忘了喂给仓库。
+- **解决**：检查 `main.py` 的启动流程：
+    > 文件 -> JsonHandler -> 数据列表 -> **Repo.load(数据)** -> 启动完毕
+
+#### 2. `if-else` 地狱
+- **现象**：`parser.py` 里写了十几个 `if cmd == ...`，看得眼睛要瞎了。
+- **解决**：**查表法 (Map)**。
+    用字典把 `指令` 和 `函数` 对应起来：`{"add": self._handle_add}`。代码瞬间清爽，想加新指令只需改字典。
+
+---
+###  4. 经验总结
+
+| 场景        | 代码片段                                                                             |
+| :-------- | :------------------------------------------------------------------------------- |
+| **万能排序**  | `sorted(list, key=lambda p: p.price)`                                            |
+| **动态取属性** | `getattr(p, "price")` (比写死 `p.price` 灵活)                                         |
+| **打印表格**  | `f"{cmd:<10} {desc}"` (左对齐占10格，理论上应该是整齐的，实际上因为中英文ascll码间隔不同问题，导致实际上是对不齐的，但是懒得改（） |
+| **字典遍历**  | `for k, v in dict.items():` (同时获取键和值)                                            |
