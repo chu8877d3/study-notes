@@ -882,7 +882,7 @@ from core.handler import save_data
 #### (1) `input()` 
 - **现象**：输入的明明是数字 `100`，做加法时却报错，或者存进 JSON 变成了字符串 `"100"`。
 - **原因**：`input()` 拿到的永远是 **文本 (String)**。
-- **✅ 解决**：拿到手必须立刻转！
+- **解决**：拿到手必须立刻转
     ```python
     # 必须包一层 float() 或 int()
     price = float(input("价格: "))
