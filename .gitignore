@@ -17,3 +17,7 @@ venv/
 .idea/
 .DS_Stores
 Thumbs.db
+
+*.json
+
+C_language
