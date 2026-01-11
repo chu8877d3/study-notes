@@ -4,5 +4,3 @@ class FileItem:
         self.basename = basename
         self.ext = ext
         self.target_folder = target_folder
-
-        
