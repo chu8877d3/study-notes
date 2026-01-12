@@ -67,7 +67,7 @@ class FileClassifier:
     def __init__(self, history_manager: HistoryManager):
         self.files = []
         self.htma = history_manager
-
+    
     def files_get(self, files_list, original_path):
         if  len(files_list) == 0:
             return
@@ -75,7 +75,7 @@ class FileClassifier:
         for file_str in files_list:
             full_src_path = os.path.join(original_path, file_str)
             if os.path.isdir(full_src_path):
-                logger.info(f"[忽略目录] {file_str}")
+                logger.info(f"忽略目录: {file_str}")
                 continue
 
             name, ext = os.path.splitext(file_str)
@@ -90,26 +90,27 @@ class FileClassifier:
             self.files.append(file_obj)
 
     def to_target_folder(self, base_dst_path):
+        self.htma.start_new_batch()
         pbar = tqdm(self.files, desc="移动文件", unit="个")
-
+        
         for file_obj in self.files:
             pbar.set_postfix(file=(filename := file_obj.full_name))
-
-            original_full_path = os.path.join(file_obj.parent, filename)
-
+            
             target_folder_path = os.path.join(base_dst_path, file_obj.target_folder)
 
             target_file_path = os.path.join(target_folder_path, filename)
 
             if not os.path.exists(target_folder_path):
                 os.makedirs(target_folder_path)
+                self.htma.log_mkdir(target_folder_path, file_obj.target_folder)
 
             if os.path.exists(target_file_path):
                 logger.warning(f"跳过同名文件: {filename}")
+
             try:
-                shutil.move(original_full_path, target_file_path)
-                self.htma.append_log_list(
-                    original_full_path,
+                shutil.move(file_obj.full_path, target_file_path)
+                self.htma.log_move(
+                    file_obj.full_path,
                     target_file_path,
                     filename
                     )
@@ -120,34 +121,64 @@ class FileClassifier:
 
         pbar.close()
         self.files = []
-
+    
     def undo(self):
         if not self.htma.log:
             logger.warning("没有可以撤回的操作记录")
             return
-        logger.info(f"开始执行撤回操作: 共{len(file_length := self.htma.log)}个文件")
+        
+        last_batch_id = self.htma.get_last_batch()
+        
+        last_batch_log = []
+        for item in reversed(self.htma.log):
+            if item['batch_id'] == last_batch_id:
+                last_batch_log.append(item)
+            else:
+                break
+            
+        logger.info(f"开始执行撤回操作: 共{len(file_length := last_batch_log)}个文件")
         count = 0
-        pbar = tqdm(file_length, desc="撤回文件", unit="个")
-        for action in file_length:
-            pbar.set_postfix(file=(filename := action["Operand"]))
-            filename = action["Operand"]
-            original_full_path = action["dst_path"]
-            target_file_path = action["src_path"]
-
-            if not os.path.exists(original_full_path):
-                 logger.warning(f"文件不存在或无权访问(可能已被手动移动) : {filename}")
-            if os.path.exists(target_file_path):
-                logger.warning(f"跳过同名文件: {filename}")
-            try:
-                shutil.move(original_full_path, target_file_path)
-
-                action["src_path"] = original_full_path
-                action["dst_path"] = target_file_path
-                action["time"] = self.htma.get_now()
-
-                logger.info(f"已撤回: {filename}")
-                count += 1
-            except Exception as e:
-                logger.error(f"移动失败 {filename}:{e}")
+        pbar = tqdm(file_length, desc="撤回进度", unit="个")
+        
+        for execute in file_length:
+            pbar.set_postfix(oper=(operand := execute['operand']))
+            action = execute['action']
+            
+            match action:
+                case 'move':
+                    current_path = execute["dst_path"] 
+                    original_path = execute["src_path"] 
+                    if not os.path.exists(current_path):      
+                        logger.warning(f"文件丢失 : {operand}")
+                        continue
+                    
+                    if os.path.exists(original_path):
+                        logger.warning(f"跳过同名文件: {operand}")
+                        continue
+                    
+                    try:
+                        os.makedirs(os.path.dirname(original_path), exist_ok=True)
+                        shutil.move(current_path, original_path)
+                        logger.info(f"已恢复: {operand}")
+                        count += 1
+                    except Exception as e:
+                        logger.error(f"撤回失败 {operand}:{e}")
+                
+                case 'mkdir':
+                    try:
+                        os.rmdir(execute['dst_path'])
+                        logger.info(f"删除空目录: {operand}")
+                        count += 1
+                    except FileNotFoundError:
+                        logger.error(f"{operand}路径不存在(可能已被手动移动)")
+                    except OSError:
+                        logger.error(f"{operand}目录非空,跳过删除")                
+                        
             pbar.update(1)
-            logger.info(f"操作完成。共撤回 {count}个文件")
+        if count > 0:
+            self.htma.remove_batch(last_batch_id)
+            self.htma.save_log_json()
+            logger.success(f"操作完成, 成功恢复 {count} 个项目")
+        
+        else:
+            logger.warning("本次没有成功撤回任何文件")

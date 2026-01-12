@@ -7,13 +7,13 @@ from utils.history import HistoryManager
 
 def main_menu():
 
+    htma = HistoryManager()
+    htma.load_log_json()
     while True:
         logger.remove()
         logger.add(
             lambda msg: tqdm.write(msg, end=''), colorize=True
         )
-        htma = HistoryManager()
-        htma.load_log_json()
 
         fcer = FileClassifier(htma)
         logger.info("[提示]输入 exit 退出循环,输入 undo 撤回操作")
@@ -24,7 +24,7 @@ def main_menu():
             fcer.undo()
             continue
         if not os.path.exists(src_path):
-            logger.warning(f"[错误] 路径: {src_path} 不存在，请重新输入")
+            logger.warning(f"路径: {src_path} 不存在，请重新输入")
             continue
         dst_path = input("请输入目标路径: ").strip()
         if dst_path.lower() == "exit":
