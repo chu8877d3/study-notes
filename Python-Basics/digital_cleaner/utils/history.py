@@ -7,13 +7,12 @@ from loguru import logger
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 base_dir = os.path.dirname(current_dir)
-data_dir = os.path.join(base_dir, "data")
 
 
 class HistoryManager:
     def __init__(self):
         self.log = []
-        self.filename = os.path.join(data_dir, "log.json")
+        self.filename = os.path.join(base_dir, "log.json")
         self.current_batch_id = None
 
     def start_new_batch(self):

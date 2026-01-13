@@ -1,48 +1,93 @@
 import os
 import shutil
+from types import MappingProxyType
 
 from loguru import logger
 from models.file import FileItem
 from tqdm import tqdm
 from utils.history import HistoryManager
-from utils.yaml import YamlParser
+
+EXTENSION_MAP = MappingProxyType(
+    {
+        # === Image ===
+        "Image": {
+            ".jpg", ".jpeg", ".png", ".gif", ".webp",
+            ".svg", ".psd", ".raw"
+        },
+        # === Document ===
+        "Document": {
+            ".txt", ".md", ".pdf", ".docx", ".xlsx",
+            ".pptx", ".log"
+        },
+        # === Audio ===
+        "Audio": {
+            ".mp3", ".wav", ".flac", ".aac", ".ogg",
+            ".wma", ".m4a", ".opus", ".mid", ".ape",
+        },
+        # === Video ===
+        "Video": {
+            ".mp4", ".mkv", ".mov", ".avi", ".wmv",
+            ".flv", ".webm", ".m4v", ".rmvb",
+        },
+        # === Code ===
+        "Code": {
+            ".c", ".cpp", ".py", ".java", ".js",
+            ".ts", ".html", ".css", ".php", ".go",
+            ".rs",
+        },
+        # === Data ===
+        "Data": {
+            ".json", ".yaml", ".yml", ".xml", ".sql",
+            ".csv", ".nbt", ".dat", ".db", ".sqlite",
+         },
+        # === Archive ===
+        "Archive": {
+            ".zip", ".rar", ".7z", ".tar", ".gz",
+            ".bz2", ".xz"
+        },
+        # === Executable ===
+        "Executable": {
+            ".exe", ".msi", ".bat", ".sh", ".ps1",
+            ".dll", ".sys", ".iso", ".com", ".bin",
+            ".deb", ".rpm", ".jar",
+        },
+        # === Specialized ===
+        "Specialized": {
+            ".litematic", ".schem", ".ttf", ".otf", ".cur"
+        },
+    }
+)
 
 
 class FileClassifier:
-    def __init__(self, history_manager: HistoryManager, yaml_parser: YamlParser):
+    def __init__(self, history_manager: HistoryManager):
         self.files = []
         self.htma = history_manager
-        self.config = yaml_parser
 
     def files_get(self, files_list, original_path):
         if len(files_list) == 0:
             return
-
-        if self.config.mode:
-            para = None
-        else:
-            black_filenames = self.config.black_filenames
-            black_extensions = self.config.black_extensions
-            para = "Others"
 
         for file_str in files_list:
             full_src_path = os.path.join(original_path, file_str)
             if os.path.isdir(full_src_path):
                 logger.info(f"忽略目录: {file_str}")
                 continue
-            if file_str in black_filenames:
-                continue
-            name, ext = os.path.splitext(file_str)
-            if ext in black_extensions:
-                continue
-            target_folder = self.config.extension_map.get(ext, para)
-            if target_folder is None:
-                continue
 
-            if ext == ".ts":
-                target_folder = self.classify_ts_file(full_src_path)
+            name, ext = os.path.splitext(file_str)
+
+            target_folder = "Others"
+            for category, extensions in EXTENSION_MAP.items():
+                if ext.lower() in extensions:
+                    target_folder = category
+                    break
 
             file_obj = FileItem(original_path, name, ext, target_folder)
+
+            if ext == ".ts":
+                target_folder = self.classify_ts_file(file_obj.full_path)
+
+            file_obj.target_folder = target_folder
             self.files.append(file_obj)
 
     def to_target_folder(self, base_dst_path):
@@ -137,7 +182,7 @@ class FileClassifier:
 
     def classify_ts_file(self, file_path):
         try:
-            with open(file_path, "rb") as f:
+            with open(file_path, 'rb') as f:
                 data = f.read(376)
 
             if len(data) < 188:
@@ -146,7 +191,7 @@ class FileClassifier:
             if data[0] == 0x47 and (len(data) >= 188 and data[188] == 0x47):
                 return "Video"
 
-            if b"\x00" in data:
+            if b'\x00' in data:
                 return "Video"
 
             return "Code"
