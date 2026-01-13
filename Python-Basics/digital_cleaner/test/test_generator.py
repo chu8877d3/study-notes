@@ -5,8 +5,8 @@ from pathlib import Path
 
 # === 配置区域 ===
 TARGET_DIR = r"D:\Test_None"  # 生成路径 (会自动创建)
-FILE_COUNT = 50  # 生成文件数量
-FOLDER_COUNT = 5  # 生成干扰文件夹数量
+FILE_COUNT = 1000  # 生成文件数量
+FOLDER_COUNT = 100  # 生成干扰文件夹数量
 
 # === 测试用后缀库 ===
 EXTENSIONS = {
