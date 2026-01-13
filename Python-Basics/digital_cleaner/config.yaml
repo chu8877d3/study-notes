@@ -35,18 +35,28 @@ extension_map:
     - .xlsx
     - .pptx
     - .log
+    - .csv
   Audio:
     - .mp3
     - .wav
     - .flac
     - .aac
     - .ogg
+    - .wma
     - .m4a
+    - .opus
+    - .mid
+    - .ape
   Video:
     - .mp4
     - .mkv
     - .mov
     - .avi
+    - .wmv
+    - .flv
+    - .webm
+    - .m4v
+    - .rmvb
     - .ts
   Code:
     - .c
@@ -56,19 +66,49 @@ extension_map:
     - .js
     - .ts
     - .html
+    - .css
+    - .php
+    - .go
+    - .rs
+    - .sh
+    - .bat
+    - .ps1
+  Data:
+    - .json
+    - .yaml
+    - .yml
+    - .xml
+    - .sql
+    - .csv
+    - .nbt
+    - .dat
+    - .db
+    - .sqlite
   Archive:
     - .zip
     - .rar
     - .7z
+    - .tar
     - .gz
+    - .bz2
+    - .xz
   Executable:
     - .exe
     - .msi
     - .bat
     - .sh
+    - .ps1
     - .dll
+    - .sys
+    - .iso
+    - .com
+    - .bin
+    - .deb
+    - .rpm
     - .jar
   Specialized:
     - .litematic
     - .schem
     - .ttf
+    - .otf
+    - .cur
