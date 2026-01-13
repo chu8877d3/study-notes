@@ -4,17 +4,21 @@ from core.classifier import FileClassifier
 from loguru import logger
 from tqdm import tqdm
 from utils.history import HistoryManager
+from utils.yaml import YamlParser
 
 
 def main_menu():
     htma = HistoryManager()
+    ympr = YamlParser()
     htma.load_log_json()
     logger.remove()
     logger.add(lambda msg: tqdm.write(msg, end=""), colorize=True)
     while True:
         src_paths = []
-        fcer = FileClassifier(htma)
-        logger.info("\n[提示]输入 exit 退出循环\n,输入 undo\n撤回操作,输入stop停止多源路径输入\n ")
+        fcer = FileClassifier(htma, ympr)
+        logger.info(
+            "\n[提示]输入 exit 退出循环\n,输入 undo\n撤回操作,输入stop停止多源路径输入\n "
+        )
         first_path = input("请输入原始路径: ").strip()
         if first_path.lower() == "exit":
             break
