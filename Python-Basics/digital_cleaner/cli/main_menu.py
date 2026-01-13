@@ -17,7 +17,7 @@ def main_menu():
         src_paths = []
         fcer = FileClassifier(htma, ympr)
         logger.info(
-            "\n[提示]输入 exit 退出循环\n,输入 undo\n撤回操作,输入stop停止多源路径输入\n "
+            "\n[提示]输入 exit 退出循环\n输入 undo 撤回操作\n 输入 stop 停止多源路径输入\n "
         )
         first_path = input("请输入原始路径: ").strip()
         if first_path.lower() == "exit":

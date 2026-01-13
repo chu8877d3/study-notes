@@ -13,7 +13,7 @@ class YamlParser:
     def __init__(self,):
         self.config = {}
         self.load_yaml()
-        self.seting = self.config.get("seting", {})
+        self.setting = self.config.get("setting", {})
         self.blacklist = self.config.get("blacklist", {})
 
     @property
@@ -23,7 +23,7 @@ class YamlParser:
 
     @property
     def mode(self):
-        return self.seting.get("whitelist_mode", False)
+        return self.setting.get("whitelist_mode", False)
 
     @property
     def black_extensions(self):
