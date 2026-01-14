@@ -10,9 +10,9 @@ setting:
 blacklist:
   extensions:
     - .tmp
-    - .bal
+    - .bak
     - .ini
-    - .ink
+    - .lnk
   filenames:
     - desktop.ini
 

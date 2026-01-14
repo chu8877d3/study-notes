@@ -1,12 +1,17 @@
 import json
 import os
+import sys
 import uuid
 from datetime import datetime
 
 from loguru import logger
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-base_dir = os.path.dirname(current_dir)
+if getattr(sys, "frozen", False):
+    base_dir = os.path.dirname(sys.executable)
+else:
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.dirname(current_dir)
+
 data_dir = os.path.join(base_dir, "data")
 
 
@@ -15,6 +20,9 @@ class HistoryManager:
         self.log = []
         self.filename = os.path.join(data_dir, "log.json")
         self.current_batch_id = None
+
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
 
     def start_new_batch(self):
         self.current_batch_id = str(uuid.uuid4())
