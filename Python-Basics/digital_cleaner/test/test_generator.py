@@ -74,7 +74,6 @@ def main():
 
         if ext == "ts":
             if random.random() > 0.5:
-
                 content = create_random_content("ts")
                 final_name = f"{name}_video.ts"
             else:

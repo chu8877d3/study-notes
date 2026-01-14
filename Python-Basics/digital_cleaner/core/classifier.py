@@ -14,28 +14,35 @@ class FileClassifier:
         self.htma = history_manager
         self.config = yaml_parser
 
+
     def files_get(self, files_list, original_path):
         if len(files_list) == 0:
             return
 
+        black_filenames = self.config.black_filenames
+        black_extensions = self.config.black_filenames
+
         if self.config.mode:
             para = None
         else:
-            black_filenames = self.config.black_filenames
-            black_extensions = self.config.black_extensions
             para = "Others"
 
         for file_str in files_list:
             full_src_path = os.path.join(original_path, file_str)
             if os.path.isdir(full_src_path):
-                logger.info(f"忽略目录: {file_str}")
+                logger.debug(f"忽略目录: {file_str}")
                 continue
             if file_str in black_filenames:
                 continue
+
             name, ext = os.path.splitext(file_str)
+            ext = ext.lower()
+
             if ext in black_extensions:
                 continue
+
             target_folder = self.config.extension_map.get(ext, para)
+
             if target_folder is None:
                 continue
 

@@ -4,13 +4,13 @@ import yaml
 from loguru import logger
 
 current_path = os.path.dirname(os.path.abspath(__file__))
-base_dir = os.path.dirname(current_path)
+project_root = os.path.dirname(current_path)
 filename = "config.yaml"
-file_path = os.path.join(base_dir, filename)
+file_path = os.path.join(project_root, filename)
 
 
 class YamlParser:
-    def __init__(self,):
+    def __init__(self):
         self.config = {}
         self.load_yaml()
         self.setting = self.config.get("setting", {})
