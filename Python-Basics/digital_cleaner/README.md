@@ -1,6 +1,7 @@
 # 文件整理助手
 主要功能：根据文件后缀，将文件整理到对对应类型的文件夹里
-注意：请确保 config.yaml 与 DigitalCleaner.exe 处于同一文件夹内。如需增加分类规则，请直接编辑 config.yaml 并保存，无需重启程序（或重启程序生效）。
+
+注意：请确保 config.yaml 与 DigitalCleaner.exe 处于同一文件夹内。如需增加分类规则，请直接编辑 config.yaml 并保存，重启程序生效。
 ## 文件后缀类型
 - Image 
     jpg, jpeg, png, gif, webp, svg, psd, raw
