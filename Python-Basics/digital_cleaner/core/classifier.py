@@ -4,16 +4,22 @@ import shutil
 from loguru import logger
 from models.file import FileItem
 from tqdm import tqdm
+from utils.async_logger import AsyncLogger
 from utils.history import HistoryManager
 from utils.yaml import YamlParser
 
 
 class FileClassifier:
-    def __init__(self, history_manager: HistoryManager, yaml_parser: YamlParser):
+    def __init__(
+        self,
+        history_manager: HistoryManager,
+        yaml_parser: YamlParser,
+        async_logger: AsyncLogger,
+    ):
         self.files = []
         self.htma = history_manager
         self.config = yaml_parser
-
+        self.aylg = async_logger
 
     def files_get(self, files_list, original_path):
         if len(files_list) == 0:
@@ -30,7 +36,7 @@ class FileClassifier:
         for file_str in files_list:
             full_src_path = os.path.join(original_path, file_str)
             if os.path.isdir(full_src_path):
-                logger.debug(f"忽略目录: {file_str}")
+                self.aylg.async_log("DEBUG", f"忽略目录: {file_str}")
                 continue
             if file_str in black_filenames:
                 continue
@@ -51,6 +57,7 @@ class FileClassifier:
 
             file_obj = FileItem(original_path, name, ext, target_folder)
             self.files.append(file_obj)
+            self.aylg.stop()
 
     def to_target_folder(self, base_dst_path):
         self.htma.start_new_batch()
@@ -68,18 +75,19 @@ class FileClassifier:
                 self.htma.log_mkdir(target_folder_path, file_obj.target_folder)
 
             if os.path.exists(target_file_path):
-                logger.warning(f"跳过同名文件: {filename}")
+                self.aylg.async_log("WARNING", f"跳过同名文件: {filename}")
 
             try:
                 shutil.move(file_obj.full_path, target_file_path)
                 self.htma.log_move(file_obj.full_path, target_file_path, filename)
-                logger.info(f"移动成功: {filename}")
+                self.aylg.async_log("INFO", f"移动成功: {filename}")
             except Exception as e:
-                logger.error(f"移动失败： {filename}: {e}")
+                self.aylg.async_log("ERROR", f"移动失败： {filename}: {e}")
             pbar.update(1)
 
         pbar.close()
         self.files = []
+        self.aylg.stop()
 
     def undo(self):
         if not self.htma.log:
@@ -108,39 +116,43 @@ class FileClassifier:
                     current_path = execute["dst_path"]
                     original_path = execute["src_path"]
                     if not os.path.exists(current_path):
-                        logger.warning(f"文件丢失 : {operand}")
+                        self.aylg.async_log("WARNING", f"文件丢失 : {operand}")
                         continue
 
                     if os.path.exists(original_path):
-                        logger.warning(f"跳过同名文件: {operand}")
+                        self.aylg.async_log("WARNING", f"跳过同名文件: {operand}")
                         continue
 
                     try:
                         os.makedirs(os.path.dirname(original_path), exist_ok=True)
                         shutil.move(current_path, original_path)
-                        logger.info(f"已恢复: {operand}")
+                        self.aylg.async_log("INFO", f"已恢复: {operand}")
                         count += 1
                     except Exception as e:
-                        logger.error(f"撤回失败 {operand}:{e}")
+                        self.aylg.async_log("ERROR", f"撤回失败 {operand}:{e}")
 
                 case "mkdir":
                     try:
                         os.rmdir(execute["dst_path"])
-                        logger.info(f"删除空目录: {operand}")
+                        self.aylg.async_log("INFO", f"删除空目录: {operand}")
                         count += 1
                     except FileNotFoundError:
-                        logger.error(f"{operand}路径不存在(可能已被手动移动)")
+                        self.aylg.async_log(
+                            "ERROR", f"{operand}路径不存在(可能已被手动移动)"
+                        )
                     except OSError:
-                        logger.error(f"{operand}目录非空,跳过删除")
+                        self.aylg.async_log("ERROR", f"{operand}目录非空,跳过删除")
 
             pbar.update(1)
         if count > 0:
             self.htma.remove_batch(last_batch_id)
             self.htma.save_log_json()
-            logger.success(f"操作完成, 成功恢复 {count} 个项目")
+            self.aylg.async_log("SUCCESS", f"操作完成, 成功恢复 {count} 个项目")
 
         else:
-            logger.warning("本次没有成功撤回任何文件")
+            self.aylg.async_log("WARNING", "本次没有成功撤回任何文件")
+
+        self.aylg.stop()
 
     def classify_ts_file(self, file_path):
         try:

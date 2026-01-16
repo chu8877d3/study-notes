@@ -4,6 +4,7 @@ from colorama import Fore, Style, init
 from core.classifier import FileClassifier
 from loguru import logger
 from tqdm import tqdm
+from utils.async_logger import AsyncLogger
 from utils.history import HistoryManager
 from utils.yaml import YamlParser
 
@@ -24,7 +25,9 @@ def help_list():
     print(Fore.GREEN + "  [exit] " + Fore.WHITE + "退出程序")
     print(Style.DIM + "-" * 50)
 
+
 def main_menu():
+    aylg = AsyncLogger()
     htma = HistoryManager()
     ympr = YamlParser()
 
@@ -34,13 +37,14 @@ def main_menu():
         lambda msg: tqdm.write(msg, end=""),
         colorize=True,
         format="<green>{time:HH:mm:ss}</green> | <level>{message}</level>",
+        enqueue=True,
     )
 
     while True:
         clear_screen()
         help_list()
 
-        fcer = FileClassifier(htma, ympr)
+        fcer = FileClassifier(htma, ympr, aylg)
 
         print(Fore.YELLOW + "\n请输入原始路径 (支持多路径, 用空格或逗号隔开):")
         user_input = input(Fore.CYAN + ">>>" + Style.RESET_ALL).strip()
