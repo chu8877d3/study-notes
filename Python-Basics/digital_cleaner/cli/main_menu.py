@@ -51,6 +51,7 @@ def main_menu():
 
         if user_input.lower() == "exit":
             print(Fore.MAGENTA + "再见")
+            aylg.stop()
             break
 
         if user_input.lower() == "undo":

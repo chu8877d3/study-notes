@@ -1,12 +1,16 @@
 import os
+import sys
 
 import yaml
 from loguru import logger
 
-current_path = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(current_path)
+if getattr(sys, "frozen", False):
+    base_dir = os.path.dirname(sys.executable)
+else:
+    current_path = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.dirname(current_path)
 filename = "config.yaml"
-file_path = os.path.join(project_root, filename)
+file_path = os.path.join(base_dir, filename)
 
 
 class YamlParser:

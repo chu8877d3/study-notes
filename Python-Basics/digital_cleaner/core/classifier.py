@@ -57,7 +57,7 @@ class FileClassifier:
 
             file_obj = FileItem(original_path, name, ext, target_folder)
             self.files.append(file_obj)
-            self.aylg.stop()
+            self.aylg.wait_complete()
 
     def to_target_folder(self, base_dst_path):
         self.htma.start_new_batch()
@@ -87,7 +87,7 @@ class FileClassifier:
 
         pbar.close()
         self.files = []
-        self.aylg.stop()
+        self.aylg.wait_complete()
 
     def undo(self):
         if not self.htma.log:
@@ -152,7 +152,7 @@ class FileClassifier:
         else:
             self.aylg.async_log("WARNING", "本次没有成功撤回任何文件")
 
-        self.aylg.stop()
+        self.aylg.wait_complete()
 
     def classify_ts_file(self, file_path):
         try:

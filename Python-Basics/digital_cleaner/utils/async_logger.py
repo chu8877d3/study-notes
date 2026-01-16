@@ -12,25 +12,33 @@ class AsyncLogger:
         self.log_thread.start()
 
     def log_worker(self):
-        while self.is_running:
-            level, message = self.log_queue.get()
+        while self.is_running or not self.log_queue.empty():
+            try:
+                level, message = self.log_queue.get(timeout=0.1)
 
-            match level:
-                case "INFO":
-                    logger.info(message)
-                case "DEBUG":
-                    logger.debug(message)
-                case "ERROR":
-                    logger.error(message)
-                case "WARNING":
-                    logger.warning(message)
-                case "SUCCESS":
-                    logger.success(message)
+                match level:
+                    case "INFO":
+                        logger.info(message)
+                    case "DEBUG":
+                        logger.debug(message)
+                    case "ERROR":
+                        logger.error(message)
+                    case "WARNING":
+                        logger.warning(message)
+                    case "SUCCESS":
+                        logger.success(message)
 
-            self.log_queue.task_done()
+                self.log_queue.task_done()
+            except queue.Empty:
+                continue
+            except Exception as e:
+                logger.error(f"日志线程出错：{e}")
 
     def async_log(self, level, message):
         self.log_queue.put((level, message))
+
+    def wait_complete(self):
+        self.log_queue.join()
 
     def stop(self):
         self.is_running = False
