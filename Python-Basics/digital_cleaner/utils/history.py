@@ -11,18 +11,15 @@ if getattr(sys, "frozen", False):
 else:
     current_dir = os.path.dirname(os.path.abspath(__file__))
     base_dir = os.path.dirname(current_dir)
-
-data_dir = os.path.join(base_dir, "data")
+file_name = "log.json"
+file_path = os.path.join(base_dir, file_name)
 
 
 class HistoryManager:
     def __init__(self):
         self.log = []
-        self.filename = os.path.join(data_dir, "log.json")
+        self.filename = file_path
         self.current_batch_id = None
-
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir)
 
     def start_new_batch(self):
         self.current_batch_id = str(uuid.uuid4())
